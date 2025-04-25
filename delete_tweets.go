@@ -22,23 +22,19 @@ type TweetData struct {
 }
 
 func main() {
-	// コマンドライン引数の解析
 	startFromID := flag.String("start", "", "このIDから削除を開始します")
 	flag.Parse()
 
-	// tweets.jsを読み込む
 	tweetsData, err := os.ReadFile("tweets.js")
 	if err != nil {
 		log.Fatalf("tweets.jsの読み込みに失敗しました: %v", err)
 	}
 
-	// final_saved_selected_tweets.txtを読み込む
 	savedData, err := os.ReadFile("final_saved_selected_tweets.txt")
 	if err != nil {
 		log.Fatalf("final_saved_selected_tweets.txtの読み込みに失敗しました: %v", err)
 	}
 
-	// 保存するツイートIDを取得
 	savedIds := make(map[string]bool)
 	for _, id := range strings.Split(string(savedData), "\n") {
 		id = strings.TrimSpace(id)
@@ -47,13 +43,11 @@ func main() {
 		}
 	}
 
-	// tweets.jsをJSONとして解析
 	var tweets []TweetData
 	if err := json.Unmarshal(tweetsData, &tweets); err != nil {
 		log.Fatalf("JSONの解析に失敗しました: %v", err)
 	}
 
-	// 削除対象のツイートIDをリストアップ
 	var deleteTargets []string
 	for _, tweet := range tweets {
 		if !savedIds[tweet.Tweet.ID] {
@@ -61,7 +55,6 @@ func main() {
 		}
 	}
 
-	// IDを数値として比較して降順にソート
 	sort.Slice(deleteTargets, func(i, j int) bool {
 		id1 := new(big.Int)
 		id2 := new(big.Int)
@@ -70,7 +63,6 @@ func main() {
 		return id1.Cmp(id2) > 0
 	})
 
-	// 指定されたIDから開始する場合
 	if *startFromID != "" {
 		found := false
 		for i, id := range deleteTargets {
@@ -85,19 +77,15 @@ func main() {
 		}
 	}
 
-	// 削除コマンドを読み込む
 	commandData, err := os.ReadFile("tweet_delete_command.dat")
 	if err != nil {
 		log.Fatalf("tweet_delete_command.datの読み込みに失敗しました: %v", err)
 	}
 	commandTemplate := string(commandData)
 
-	// 各ツイートを削除
 	for _, id := range deleteTargets {
-		// コマンドのTWEET_IDを置換
 		command := strings.ReplaceAll(commandTemplate, "TWEET_ID", id)
 
-		// コマンドを実行
 		cmd := exec.Command("bash", "-c", command)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
@@ -107,7 +95,6 @@ func main() {
 
 		fmt.Printf("ツイートを削除しました (ID: %s)\n", id)
 		
-		// 0.5秒待機
 		time.Sleep(500 * time.Millisecond)
 	}
 } 

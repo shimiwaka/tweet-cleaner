@@ -23,36 +23,30 @@ type TemplateData struct {
 }
 
 func main() {
-	// tweets.jsを読み込む
 	data, err := os.ReadFile("tweets.js")
 	if err != nil {
 		log.Fatalf("tweets.jsの読み込みに失敗しました: %v", err)
 	}
 
-	// JSONとして解析
 	var tweets []TweetData
 	if err := json.Unmarshal(data, &tweets); err != nil {
 		log.Fatalf("JSONの解析に失敗しました: %v", err)
 	}
 
-	// IDの順番でソート（新しいものほど下に表示）
 	sort.Slice(tweets, func(i, j int) bool {
 		return tweets[i].Tweet.ID < tweets[j].Tweet.ID
 	})
 
-	// saved_selected_tweets.txtを読み込む
 	var selectedTweets string
 	if savedData, err := os.ReadFile("saved_selected_tweets.txt"); err == nil {
 		selectedTweets = string(savedData)
 	}
 
-	// テンプレートデータを作成
 	templateData := TemplateData{
 		Tweets:        tweets,
 		SelectedTweets: selectedTweets,
 	}
 
-	// HTMLテンプレートを作成
 	tmpl := `<!DOCTYPE html>
 <html>
 <head>
@@ -89,7 +83,7 @@ func main() {
             background-color: #45a049;
         }
         body {
-            padding-bottom: 80px; /* ボタンのために下部に余白を追加 */
+            padding-bottom: 80px;
         }
     </style>
 </head>
@@ -107,7 +101,6 @@ func main() {
     <script>
         let selectedTweets = new Set();
         
-        // 保存された選択状態を設定
         const savedIds = ` + "`{{.SelectedTweets}}`" + `.split('\n').filter(id => id.trim() !== '');
         savedIds.forEach(id => {
             selectedTweets.add(id);
@@ -148,20 +141,17 @@ func main() {
 </body>
 </html>`
 
-	// テンプレートを解析
 	t, err := template.New("tweets").Parse(tmpl)
 	if err != nil {
 		log.Fatalf("テンプレートの解析に失敗しました: %v", err)
 	}
 
-	// HTMLファイルを生成
 	output, err := os.Create("tweets.html")
 	if err != nil {
 		log.Fatalf("HTMLファイルの作成に失敗しました: %v", err)
 	}
 	defer output.Close()
 
-	// テンプレートを実行
 	if err := t.Execute(output, templateData); err != nil {
 		log.Fatalf("テンプレートの実行に失敗しました: %v", err)
 	}
